@@ -47,105 +47,6 @@
 #include <QVector>
 #include <QProcess>
 
-#if defined(QTSERVICE_DEBUG)
-#include <QDebug>
-#include <QString>
-#include <QFile>
-#include <QTime>
-#include <QMutex>
-#if defined(Q_OS_WIN32)
-#include <qt_windows.h>
-#else
-#include <unistd.h>
-#include <stdlib.h>
-#endif
-
-static QFile* f = 0;
-
-static void qtServiceCloseDebugLog()
-{
-    if (!f)
-        return;
-    f->write(QTime::currentTime().toString("HH:mm:ss.zzz").toLatin1());
-    f->write(" --- DEBUG LOG CLOSED ---\n\n");
-    f->flush();
-    f->close();
-    delete f;
-    f = 0;
-}
-
-#if QT_VERSION >= 0x050000
-void qtServiceLogDebug(QtMsgType type, const QMessageLogContext &context, const QString &msg)
-#else
-void qtServiceLogDebug(QtMsgType type, const char* msg)
-#endif
-{
-    static QMutex mutex;
-    QMutexLocker locker(&mutex);
-#if defined(Q_OS_WIN32)
-    const qulonglong processId = GetCurrentProcessId();
-#else
-    const qulonglong processId = getpid();
-#endif
-    QByteArray s(QTime::currentTime().toString("HH:mm:ss.zzz").toLatin1());
-    s += " [";
-    s += QByteArray::number(processId);
-    s += "] ";
-
-    if (!f) {
-#if defined(Q_OS_WIN32)
-        f = new QFile("c:/service-debuglog.txt");
-#else
-        f = new QFile("/tmp/service-debuglog.txt");
-#endif
-        if (!f->open(QIODevice::WriteOnly | QIODevice::Append)) {
-            delete f;
-            f = 0;
-            return;
-        }
-        QByteArray ps('\n' + s + "--- DEBUG LOG OPENED ---\n");
-        f->write(ps);
-    }
-
-    switch (type) {
-    case QtWarningMsg:
-        s += "WARNING: ";
-        break;
-    case QtCriticalMsg:
-        s += "CRITICAL: ";
-        break;
-    case QtFatalMsg:
-        s+= "FATAL: ";
-        break;
-    case QtDebugMsg:
-        s += "DEBUG: ";
-        break;
-    default:
-        // Nothing
-        break;
-    }
-
-#if QT_VERSION >= 0x050400
-    s += qFormatLogMessage(type, context, msg).toLocal8Bit();
-#elif QT_VERSION >= 0x050000
-    s += msg.toLocal8Bit();
-    Q_UNUSED(context)
-#else
-    s += msg;
-#endif
-    s += '\n';
-
-    f->write(s);
-    f->flush();
-
-    if (type == QtFatalMsg) {
-        qtServiceCloseDebugLog();
-        exit(1);
-    }
-}
-
-#endif
-
 /*!
     \class QtServiceController
 
@@ -636,15 +537,6 @@ int QtServiceBasePrivate::run(bool asService, const QStringList &argList)
 */
 QtServiceBase::QtServiceBase(int argc, char **argv, const QString &name)
 {
-#if defined(QTSERVICE_DEBUG)
-#  if QT_VERSION >= 0x050000
-    qInstallMessageHandler(qtServiceLogDebug);
-#  else
-    qInstallMsgHandler(qtServiceLogDebug);
-#  endif
-    qAddPostRoutine(qtServiceCloseDebugLog);
-#endif
-
     Q_ASSERT(!QtServiceBasePrivate::instance);
     QtServiceBasePrivate::instance = this;
 
@@ -693,6 +585,16 @@ QtServiceBase::~QtServiceBase()
 QString QtServiceBase::serviceName() const
 {
     return d_ptr->controller.serviceName();
+}
+
+QString QtServiceBase::serviceDisplayName() const
+{
+    return d_ptr->serviceDisplayName;
+}
+
+void QtServiceBase::setServiceDisplayName(const QString &displayName)
+{
+    d_ptr->serviceDisplayName = displayName;
 }
 
 /*!
@@ -744,6 +646,16 @@ void QtServiceBase::setStartupType(QtServiceController::StartupType type)
 QtServiceBase::ServiceFlags QtServiceBase::serviceFlags() const
 {
     return d_ptr->serviceFlags;
+}
+
+QStringList QtServiceBase::serviceStartupArgs() const
+{
+    return d_ptr->startupArgs;
+}
+
+void QtServiceBase::setServiceStartupArgs(const QStringList &startupArgs)
+{
+    d_ptr->startupArgs = startupArgs;
 }
 
 /*!

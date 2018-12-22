@@ -44,7 +44,6 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QFile>
-#include <QLibrary>
 #include <QMutex>
 #include <QSemaphore>
 #include <QProcess>
@@ -57,9 +56,6 @@
 #include <QThread>
 #include <QAbstractNativeEventFilter>
 #include <cstdio>
-#if defined(QTSERVICE_DEBUG)
-#include <QDebug>
-#endif
 
 bool QtServiceController::isInstalled() const
 {
@@ -157,7 +153,7 @@ QString QtServiceController::serviceDescription() const
             if (QueryServiceConfig2W(
                     hService,
                     SERVICE_CONFIG_DESCRIPTION,
-                    (unsigned char *)data,
+                    reinterpret_cast<LPBYTE>(data),
                     8096,
                     &dwBytesNeeded))
             {
@@ -354,33 +350,9 @@ bool QtServiceController::sendCommand(int code)
     return result;
 }
 
-#if defined(QTSERVICE_DEBUG)
-#  if QT_VERSION >= 0x050000
-extern void qtServiceLogDebug(QtMsgType type, const QMessageLogContext &context, const QString &msg);
-#  else
-extern void qtServiceLogDebug(QtMsgType type, const char* msg);
-#  endif
-#endif
-
 void QtServiceBase::logMessage(const QString &message, MessageType type,
                            int id, uint category, const QByteArray &data)
 {
-#if defined(QTSERVICE_DEBUG)
-    QByteArray dbgMsg("[LOGGED ");
-    switch (type) {
-    case Error: dbgMsg += "Error] " ; break;
-    case Warning: dbgMsg += "Warning] "; break;
-    case Success: dbgMsg += "Success] "; break;
-    case Information: //fall through
-    default: dbgMsg += "Information] "; break;
-    }
-#  if QT_VERSION >= 0x050000
-    qtServiceLogDebug((QtMsgType)-1, QMessageLogContext(), QLatin1String(dbgMsg) + message);
-#  else
-    qtServiceLogDebug((QtMsgType)-1, (dbgMsg + message.toAscii()).constData());
-#  endif
-#endif
-
     Q_D(QtServiceBase);
     WORD wType;
     switch (type)
@@ -434,9 +406,6 @@ public:
     QStringList serviceArgs;
 
     static QtServiceSysPrivate *instance;
-#if QT_VERSION < 0x050000
-    static QCoreApplication::EventFilter nextFilter;
-#endif
 
     QWaitCondition condition;
     QMutex mutex;
@@ -461,9 +430,6 @@ void QtServiceControllerHandler::customEvent(QEvent *e)
 
 
 QtServiceSysPrivate *QtServiceSysPrivate::instance = nullptr;
-#if QT_VERSION < 0x050000
-QCoreApplication::EventFilter QtServiceSysPrivate::nextFilter = 0;
-#endif
 
 QtServiceSysPrivate::QtServiceSysPrivate()
 {
@@ -672,7 +638,6 @@ protected:
   Ignore WM_ENDSESSION system events, since they make the Qt kernel quit
 */
 
-#if QT_VERSION >= 0x050000
 
 class QtServiceAppEventFilter : public QAbstractNativeEventFilter
 {
@@ -694,22 +659,6 @@ bool QtServiceAppEventFilter::nativeEventFilter(const QByteArray &, void *messag
 
 Q_GLOBAL_STATIC(QtServiceAppEventFilter, qtServiceAppEventFilter)
 
-#else
-
-bool myEventFilter(void* message, long* result)
-{
-    MSG* msg = reinterpret_cast<MSG*>(message);
-    if (!msg || (msg->message != WM_ENDSESSION) || !(msg->lParam & ENDSESSION_LOGOFF))
-        return QtServiceSysPrivate::nextFilter ? QtServiceSysPrivate::nextFilter(message, result) : false;
-
-    if (QtServiceSysPrivate::nextFilter)
-        QtServiceSysPrivate::nextFilter(message, result);
-    if (result)
-        *result = TRUE;
-    return true;
-}
-
-#endif
 
 /* There are three ways we can be started:
 
@@ -769,11 +718,7 @@ bool QtServiceBasePrivate::start()
     if (!app)
         return false;
 
-#if QT_VERSION >= 0x050000
     QAbstractEventDispatcher::instance()->installNativeEventFilter(qtServiceAppEventFilter());
-#else
-    QtServiceSysPrivate::nextFilter = app->setEventFilter(myEventFilter);
-#endif
 
     sys->controllerHandler = new QtServiceControllerHandler(sys);
 
@@ -801,6 +746,7 @@ bool QtServiceBasePrivate::install(const QString &account, const QString &passwo
     SC_HANDLE hSCM = OpenSCManagerW(nullptr, nullptr, SC_MANAGER_ALL_ACCESS);
     if (hSCM)
     {
+        serviceDisplayName = serviceDisplayName.isEmpty() ? controller.serviceName() : serviceDisplayName;
         QString acc = account;
         DWORD dwStartType = startupType == QtServiceController::AutoStartup ? SERVICE_AUTO_START : SERVICE_DEMAND_START;
         DWORD dwServiceType = SERVICE_WIN32_OWN_PROCESS;
@@ -812,9 +758,9 @@ bool QtServiceBasePrivate::install(const QString &account, const QString &passwo
             // so if only a username was specified without a domain, default to the local machine domain.
             if (!acc.contains(QLatin1Char('\\')))
             {
-                acc.prepend(QLatin1String(".\\"));
+                acc.prepend(QStringLiteral(".\\"));
             }
-            if (!acc.endsWith(QLatin1String("\\LocalSystem")))
+            if (!acc.endsWith(QStringLiteral("\\LocalSystem")))
                 act = (wchar_t*)acc.utf16();
         }
         if (!password.isEmpty() && act)
@@ -827,7 +773,7 @@ bool QtServiceBasePrivate::install(const QString &account, const QString &passwo
 
         // Create the service
         SC_HANDLE hService = CreateServiceW(hSCM, reinterpret_cast<LPCWSTR>(controller.serviceName().utf16()),
-                                            reinterpret_cast<LPCWSTR>(controller.serviceName().utf16()),
+                                            reinterpret_cast<LPCWSTR>(serviceDisplayName.utf16()),
                                             SERVICE_ALL_ACCESS,
                                             dwServiceType, // QObject::inherits ( const char * className ) for no inter active ????
                                             dwStartType, SERVICE_ERROR_NORMAL, reinterpret_cast<LPCWSTR>(filePath().utf16()),
@@ -852,8 +798,11 @@ bool QtServiceBasePrivate::install(const QString &account, const QString &passwo
 QString QtServiceBasePrivate::filePath() const
 {
     wchar_t path[_MAX_PATH];
-    ::GetModuleFileNameW( nullptr, path, sizeof(path) );
-    return QString::fromUtf16(reinterpret_cast<unsigned short*>(path));
+    ::GetModuleFileNameW(nullptr, path, sizeof(path));
+    auto fullPath = QString::fromUtf16(reinterpret_cast<unsigned short*>(path));
+    if (!startupArgs.isEmpty())
+        fullPath += QLatin1Char(' ') + startupArgs.join(QLatin1Char(' '));
+    return fullPath;
 }
 
 bool QtServiceBasePrivate::sysInit()

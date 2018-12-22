@@ -95,7 +95,7 @@ private:
     QtServiceControllerPrivate *d_ptr;
 };
 
-class QtServiceBasePrivate;
+QT_FORWARD_DECLARE_CLASS(QtServiceBasePrivate)
 
 class QT_QTSERVICE_EXPORT QtServiceBase
 {
@@ -122,6 +122,9 @@ public:
 
     QString serviceName() const;
 
+    QString serviceDisplayName() const;
+    void setServiceDisplayName(const QString &displayName);
+
     QString serviceDescription() const;
     void setServiceDescription(const QString &description);
 
@@ -130,6 +133,9 @@ public:
 
     ServiceFlags serviceFlags() const;
     void setServiceFlags(ServiceFlags flags);
+
+    QStringList serviceStartupArgs() const;
+    void setServiceStartupArgs(const QStringList &startupArgs);
 
     int exec();
 
