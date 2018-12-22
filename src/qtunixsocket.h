@@ -38,8 +38,7 @@
 **
 ****************************************************************************/
 
-#ifndef QTUNIXSOCKET_H
-#define QTUNIXSOCKET_H
+#pragma once
 
 #include <QTcpSocket>
 
@@ -47,9 +46,7 @@ class QtUnixSocket : public QTcpSocket
 {
     Q_OBJECT
 public:
-    QtUnixSocket(QObject *parent = 0);
+    QtUnixSocket(QObject *parent = nullptr);
 
     bool connectTo(const QString &path);
 };
-
-#endif

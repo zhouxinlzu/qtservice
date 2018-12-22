@@ -38,10 +38,8 @@
 **
 ****************************************************************************/
 
-#ifndef QTSERVICE_P_H
-#define QTSERVICE_P_H
+#pragma once
 
-#include <QStringList>
 #include "qtservice.h"
 
 class QtServiceControllerPrivate
@@ -83,5 +81,3 @@ public:
     void sysCleanup();
     class QtServiceSysPrivate *sysd;
 };
-
-#endif

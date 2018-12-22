@@ -1,7 +1,6 @@
 TEMPLATE = app
-CONFIG += console qt
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+QT *= widgets
 
-SOURCES = main.cpp
+SOURCES *= main.cpp
 
-include(../../src/qtservice.pri)
+include($$PWD/../../src/qtservice.pri)

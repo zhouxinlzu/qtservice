@@ -1,10 +1,22 @@
-exists(config.pri):infile(config.pri, SOLUTIONS_LIBRARY, yes): CONFIG += qtservice-uselib
-TEMPLATE += fakelib
-QTSERVICE_LIBNAME = QtSolutions_Service-head
-CONFIG(debug, debug|release) {
-	mac:QTSERVICE_LIBNAME = $$member(QTSERVICE_LIBNAME, 0)_debug
-   	else:win32:QTSERVICE_LIBNAME = $$member(QTSERVICE_LIBNAME, 0)d
+CONFIG(QS_BUILD_LIB)|CONFIG(qtservice-uselib) {
+    TEMPLATE *= fakelib
+    isEmpty(QTSERVICE_LIBNAME): QTSERVICE_LIBNAME = $$qt5LibraryTarget(QtService)
+    TEMPLATE -= fakelib
+    CONFIG *= qtservice-uselib QS_BUILD_LIB
 }
-TEMPLATE -= fakelib
-QTSERVICE_LIBDIR = $$PWD/lib
-unix:qtservice-uselib:!qtservice-buildlib:QMAKE_RPATHDIR += $$QTSERVICE_LIBDIR
+isEmpty(ROOT): ROOT = $$PWD
+isEmpty(BUILD_DIR): BUILD_DIR = $$ROOT/build
+isEmpty(BIN_DIR): BIN_DIR = $$BUILD_DIR/bin
+isEmpty(LIB_DIR): LIB_DIR = $$BUILD_DIR/lib
+contains(QT_ARCH, x86_64) {
+    BIN_DIR = $$join(BIN_DIR,,,64)
+    LIB_DIR = $$join(LIB_DIR,,,64)
+}
+CONFIG(static, static|shared): LIB_DIR = $$join(LIB_DIR,,,_static)
+contains(TEMPLATE, app): DESTDIR = $$BIN_DIR
+else:contains(TEMPLATE, lib): DESTDIR = $$LIB_DIR
+#win32:CONFIG(dll): DLLDESTDIR = $$BIN_DIR
+CONFIG *= c++11
+CONFIG(qt): DEFINES *= QT_DEPRECATED_WARNINGS QT_DISABLE_DEPRECATED_BEFORE=0x050603
+CONFIG -= app_bundle
+unix:CONFIG(qtservice-uselib):!CONFIG(qtservice-buildlib): QMAKE_RPATHDIR *= $$LIB_DIR

@@ -1,5 +1,5 @@
-TEMPLATE=subdirs
-CONFIG += ordered
-include(common.pri)
-qtservice-uselib:SUBDIRS=buildlib
-SUBDIRS+=examples
+TEMPLATE = subdirs
+CONFIG *= ordered
+include($$PWD/common.pri)
+CONFIG(qtservice-uselib)|CONFIG(QS_BUILD_LIB): SUBDIRS *= buildlib
+!CONFIG(QS_NO_EXAMPLES): SUBDIRS *= examples

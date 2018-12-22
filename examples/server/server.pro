@@ -1,8 +1,9 @@
-TARGET   = httpservice
+TARGET = httpservice
 TEMPLATE = app
-CONFIG   += console qt
-QT = core network 
+CONFIG *= console
+QT *= network
+QT -= gui
 
-SOURCES  = main.cpp
+SOURCES  *= main.cpp
 
-include(../../src/qtservice.pri)
+include($$PWD/../../src/qtservice.pri)

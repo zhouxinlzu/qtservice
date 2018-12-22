@@ -1,7 +1,7 @@
 TEMPLATE = app
-CONFIG   += console qt
-QT = core
+CONFIG *= console
+QT -= gui
 
-SOURCES = main.cpp
+SOURCES *= main.cpp
 
-include(../../src/qtservice.pri)
+include($$PWD/../../src/qtservice.pri)

@@ -1,4 +1,5 @@
 TEMPLATE = subdirs
-SUBDIRS = interactive \
-	  server \
-          controller
+SUBDIRS *= \
+    interactive \
+    server \
+    controller

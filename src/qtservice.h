@@ -38,12 +38,11 @@
 **
 ****************************************************************************/
 
-#ifndef QTSERVICE_H
-#define QTSERVICE_H
+#pragma once
 
 #include <QCoreApplication>
 
-#if defined(Q_OS_WIN)
+#ifdef Q_OS_WIN
 #  if !defined(QT_QTSERVICE_EXPORT) && !defined(QT_QTSERVICE_IMPORT)
 #    define QT_QTSERVICE_EXPORT
 #  elif defined(QT_QTSERVICE_IMPORT)
@@ -59,8 +58,7 @@
 #  define QT_QTSERVICE_EXPORT
 #endif
 
-class QStringList;
-class QtServiceControllerPrivate;
+QT_FORWARD_DECLARE_CLASS(QtServiceControllerPrivate)
 
 class QT_QTSERVICE_EXPORT QtServiceController
 {
@@ -68,7 +66,7 @@ class QT_QTSERVICE_EXPORT QtServiceController
 public:
     enum StartupType
     {
-	    AutoStartup = 0, ManualStartup
+        AutoStartup = 0, ManualStartup
     };
 
     QtServiceController(const QString &name);
@@ -106,7 +104,7 @@ public:
 
     enum MessageType
     {
-	Success = 0, Error, Warning, Information
+        Success = 0, Error, Warning, Information
     };
 
     enum ServiceFlag
@@ -165,9 +163,7 @@ public:
     QtService(int argc, char **argv, const QString &name)
         : QtServiceBase(argc, argv, name), app(0)
     {  }
-    ~QtService()
-    {
-    }
+    ~QtService() = default;
 
 protected:
     Application *application() const
@@ -188,5 +184,3 @@ private:
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(QtServiceBase::ServiceFlags)
-
-#endif // QTSERVICE_H
