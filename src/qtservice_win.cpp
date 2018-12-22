@@ -233,7 +233,7 @@ bool QtServiceController::start(const QStringList &args)
         {
             QVector<LPCWSTR> argv(args.size());
             for (int i = 0; i < args.size(); ++i)
-                argv[i] = (const wchar_t*)args.at(i).utf16();
+                argv[i] = reinterpret_cast<LPCWSTR>(args.at(i).utf16());
 
             if (StartServiceW(hService, args.size(), argv.data()))
                 result = true;
@@ -761,7 +761,7 @@ bool QtServiceBasePrivate::install(const QString &account, const QString &passwo
                 acc.prepend(QStringLiteral(".\\"));
             }
             if (!acc.endsWith(QStringLiteral("\\LocalSystem")))
-                act = (wchar_t*)acc.utf16();
+                act = reinterpret_cast<LPWSTR>(const_cast<unsigned short*>(acc.utf16()));
         }
         if (!password.isEmpty() && act)
         {
@@ -799,7 +799,11 @@ QString QtServiceBasePrivate::filePath() const
 {
     wchar_t path[_MAX_PATH];
     ::GetModuleFileNameW(nullptr, path, sizeof(path));
-    auto fullPath = QString::fromUtf16(reinterpret_cast<unsigned short*>(path));
+    QString fullPath = QString::fromUtf16(reinterpret_cast<unsigned short*>(path));
+    if (!fullPath.startsWith(QLatin1Char('"')))
+        fullPath.prepend(QLatin1Char('"'));
+    if (!fullPath.endsWith(QLatin1Char('"')))
+        fullPath.append(QLatin1Char('"'));
     if (!startupArgs.isEmpty())
         fullPath += QLatin1Char(' ') + startupArgs.join(QLatin1Char(' '));
     return fullPath;
@@ -843,5 +847,3 @@ void QtServiceBase::setServiceFlags(QtServiceBase::ServiceFlags flags)
     if (d_ptr->sysd)
         d_ptr->sysd->setServiceFlags(flags);
 }
-
-
