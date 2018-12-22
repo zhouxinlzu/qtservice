@@ -41,7 +41,7 @@ and Unix daemons.<br>
 - LGPL release.
 
 2.7 (wangwenx190)
-- Removed Qt4 support (it's too old and too out-dated!)
+- Removed Qt4 support (it's too old and too out-dated!).
 - Removed QLibrary dependency.
 - Adapted to C++14 grammer.
 - Other minor tweaks.
