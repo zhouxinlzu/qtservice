@@ -41,3 +41,26 @@ target_wrapper.*
 
 # QtCreator CMake
 CMakeLists.txt.user*
+
+# binary files
+[Bb]in/
+[Bb]in64/
+[Dd]ebug/
+[Rr]elease/
+[Bb]uild/
+*.rc
+Thumbs.db
+version_ci.pri
+*.conf
+rep_*_replica.h
+rep_*_source.h
+*.lib
+*.exe
+*.exp
+*.ilk
+*.7z
+*.zip
+*.rar
+ffmpeg/
+*.qm
+version_ci.h
