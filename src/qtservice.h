@@ -58,6 +58,10 @@
 #  define QT_QTSERVICE_EXPORT
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 QT_FORWARD_DECLARE_CLASS(QtServiceControllerPrivate)
 
 class QT_QTSERVICE_EXPORT QtServiceController
@@ -161,6 +165,10 @@ private:
     friend class QtServiceSysPrivate;
     QtServiceBasePrivate *d_ptr;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 template <typename Application>
 class QtService : public QtServiceBase
