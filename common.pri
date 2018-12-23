@@ -1,7 +1,9 @@
 CONFIG(QS_BUILD_LIB)|CONFIG(qtservice-uselib) {
-    TEMPLATE *= fakelib
-    isEmpty(QTSERVICE_LIBNAME): QTSERVICE_LIBNAME = $$qt5LibraryTarget(QtService)
-    TEMPLATE -= fakelib
+    isEmpty(QTSERVICE_LIBNAME) {
+        TEMPLATE *= fakelib
+        QTSERVICE_LIBNAME = $$qt5LibraryTarget(QtService)
+        TEMPLATE -= fakelib
+    }
     CONFIG *= qtservice-uselib QS_BUILD_LIB
 }
 isEmpty(ROOT): ROOT = $$PWD
@@ -15,7 +17,6 @@ contains(QT_ARCH, x86_64) {
 CONFIG(static, static|shared): LIB_DIR = $$join(LIB_DIR,,,_static)
 contains(TEMPLATE, app): DESTDIR = $$BIN_DIR
 else:contains(TEMPLATE, lib): DESTDIR = $$LIB_DIR
-#win32:CONFIG(dll): DLLDESTDIR = $$BIN_DIR
 CONFIG *= c++11
 CONFIG(qt): DEFINES *= QT_DEPRECATED_WARNINGS QT_DISABLE_DEPRECATED_BEFORE=0x050603
 CONFIG -= app_bundle

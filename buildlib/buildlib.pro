@@ -1,7 +1,6 @@
 TEMPLATE = lib
 CONFIG *= qtservice-buildlib
 mac: CONFIG *= absolute_library_soname
-win32|mac:!wince*:!win32-msvc:!macx-xcode: CONFIG *= debug_and_release build_all
 include($$PWD/../src/qtservice.pri)
 TARGET = $$QTSERVICE_LIBNAME
 win32 {
