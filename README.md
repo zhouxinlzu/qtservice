@@ -43,7 +43,7 @@ and Unix daemons.<br>
 2.7 (wangwenx190)
 - Removed Qt4 support (it's too old and too out-dated!).
 - Removed QLibrary dependency.
-- Adapted to C++14 grammer.
+- Adapted to modern C++.
 - Other minor tweaks.
 
 ### License
